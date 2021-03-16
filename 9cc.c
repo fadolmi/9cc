@@ -110,7 +110,7 @@ Token* tokenize() {
       continue;
     }
 
-    if (*p == '+' || *p == '-') {
+    if (strchr("+-*/()", *p)) {
       cur = new_token(TK_RESERVED, cur, p++);
       continue;
     }
@@ -134,14 +134,17 @@ Token* tokenize() {
 
 /* 
   生成規則
-	expr = num ("+" num | "-" num)*
-	     = num ("+" expr | "-" expr)
+	expr    = mul ("+" mul | "-" mul)*
+	mul     = primary ("*" primary | "/" primary);
+	primary = num | "(" expr ")"
 */
 
 // 抽象構文木のノードの種類
 typedef enum {
   ND_ADD, // +
   ND_SUB, // -
+  ND_MUL, // *
+  ND_DIV, // /
   ND_NUM, // 整数
 } NodeKind;
 
@@ -169,18 +172,52 @@ Node* new_node_num(int val) {
   return node;
 }
 
+// プロトタイプ宣言
+Node* expr();
+Node* mul();
+Node* primary();
+
+// expr = mul ("+" mul | "-" mul)*
 Node* expr() {
-  Node *node = new_node_num(expect_number());
+  Node* node = mul();
 
   for(;;) {
 	if (consume('+')) {
-	  node = new_node(ND_ADD, node, expr());
+	  node = new_node(ND_ADD, node, mul());
 	}else if (consume('-')) {
-	  node = new_node(ND_SUB, node, expr()); 
+	  node = new_node(ND_SUB, node, mul()); 
 	}else {
 	  return node;
 	}
   }
+}
+
+// mul = primary ("*" primary | "/" primary)*
+Node* mul() {
+  Node* node = primary();
+
+  for(;;) {
+	if (consume('*')) {
+	  node = new_node(ND_MUL, node, primary());
+	}else if (consume('/')) {
+	  node = new_node(ND_DIV, node, primary());
+	}else {
+	  return node;
+	}
+  }
+}
+
+// primary = num | "(" expr ")"
+Node* primary() {
+  // 次のトークンが"("なら"(" expr ")"のはず
+  if (consume('(')) {
+	Node* node = expr();
+	expect(')');
+	return node;
+  }
+
+  // そうでなければ数値のはず
+  return new_node_num(expect_number());
 }
 
 //
@@ -205,6 +242,13 @@ void gen(Node *node) {
     break;
   case ND_SUB:
     printf("  sub rax, rdi\n");
+    break; 
+  case ND_MUL:
+    printf("  imul rax, rdi\n");
+    break;
+  case ND_DIV:
+	printf("  cqo\n");
+    printf("  idiv rdi\n");
     break;
   }
 
