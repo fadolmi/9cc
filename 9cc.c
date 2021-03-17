@@ -135,8 +135,12 @@ Token* tokenize() {
 /* 
   生成規則
 	expr    = mul ("+" mul | "-" mul)*
+<<<<<<< HEAD
 	mul     = unary ("*" unary | "/" unary);
 	unary   = (("+" | "-") unary) | primary
+=======
+	mul     = primary ("*" primary | "/" primary);
+>>>>>>> be8a53835ffc44e9a7d6df139fdba9bd4125cafd
 	primary = num | "(" expr ")"
 */
 
