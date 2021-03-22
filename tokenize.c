@@ -98,7 +98,7 @@ Token* tokenize() {
 		  continue;
 		}
 
-    if (strchr("+-*/()<>", *p)) {
+    if (strchr("+-*/()<>=;", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -110,6 +110,12 @@ Token* tokenize() {
 	  cur->len = p - q;
       continue;
     }
+
+	if ('a' <= *p && *p <= 'z') {
+	  cur = new_token(TK_IDENT, cur, p++, 1);
+	  cur->len = 1;
+	  continue;
+	}
 
     error_at(p, "トークナイズできません");
   }

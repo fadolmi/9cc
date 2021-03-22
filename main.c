@@ -9,9 +9,22 @@ int main(int argc, char* argv[]) {
   // トークナイズしてパースする
   user_input = argv[1];
   token = tokenize();
-  Node* node = expr();
+  program();
 
   // アセンブリを出力
-  codegen(node);
+  gen_init();
+
+  prologue();
+
+  for (int i = 0; code[i]; i++) {
+	gen(code[i]);
+
+	// 式の評価結果としてスタックに一つの値が残っている
+    // はずなので、スタックが溢れないようにポップしておく
+    printf("  pop rax\n");
+  }
+
+  epilogue();
+
   return 0;
 }
