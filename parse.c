@@ -13,6 +13,19 @@
 	primary    = num | ident | "(" expr ")"
 */
 
+// ローカル変数
+LVar* locals;
+
+// 変数を名前で検索する。見つからなかった場合はNULLを返す。
+LVar* find_lvar(Token* tok) {
+  for (LVar* var = locals; var; var = var->next) {
+	if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+	  return var;
+	}
+  }
+  return NULL;
+}
+
 Node* new_node(NodeKind kind, Node* lhs, Node* rhs) {
   Node* node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -51,6 +64,8 @@ Node* code[100];
 
 // program = stmt*
 void program() {
+  locals = calloc(1, sizeof(LVar));
+  locals->offset = 0;
   int i = 0;
   while (!at_eof()) {
 	code[i++] = stmt();
@@ -161,13 +176,22 @@ Node* primary() {
 	Node* node = expr();
 	expect(")");
 	return node;
-  }else if (token->kind == TK_IDENT) {
-	// ローカル変数ならベースポインタからのオフセットを求める
-	int offset = (token->str[0] - 'a' + 1) * 8;
-	token = token->next;
-	return new_node_ident(offset);
-  }else {
-	// そうでなければ数値のはず
-	return new_node_num(expect_number());
   }
+
+  if (token->kind == TK_IDENT) {
+	LVar* lvar = find_lvar(token);
+	if (lvar == NULL) {
+	  lvar = calloc(1, sizeof(LVar));
+	  lvar->next = locals;
+	  lvar->name = token->str;
+	  lvar->len = token->len;
+	  lvar->offset = locals->offset + 8;
+	  locals = lvar;
+	}
+	token = token->next;
+	return new_node_ident(lvar->offset);
+  }
+
+  // そうでなければ数値のはず
+  return new_node_num(expect_number());
 }
