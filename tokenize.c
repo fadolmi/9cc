@@ -103,6 +103,12 @@ Token* tokenize() {
       continue;
     }
 
+	if (memcmp(p, "return", 6) == 0 && !(isalnum(p[6]) || *p == '_')) {
+	  cur = new_token(TK_RETURN, cur, p, 6);
+	  p += 6;
+	  continue;
+	}
+
     if (isdigit(*p)) {
       cur = new_token(TK_NUM, cur, p, 0);
 	  char* q = p;

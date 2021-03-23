@@ -3,7 +3,7 @@
 /* 
   生成規則
 	program    = stmt*
-	stmt       = expr ";"
+	stmt       = expr ";" | "return" expr ";"
 	expr       = assign
 	assign     = equality ("=" assign)?
 	equality   = relational ("==" relational | "!=" relational)*
@@ -73,9 +73,19 @@ void program() {
   code[i] = NULL;
 }
 
-// stmt = expr ";"
+// stmt = expr ";" | "return" expr ";"
 Node* stmt() {
-  Node* node = expr();
+  Node* node;
+
+  if (token->kind == TK_RETURN) {
+	token = token->next;
+	node = calloc(1, sizeof(Node));
+	node->kind = ND_RETURN;
+	node->lhs = expr();
+  }else {
+	node = expr();
+  }
+
   expect(";");
   return node;
 }
